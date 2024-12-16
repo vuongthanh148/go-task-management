@@ -1,0 +1,6 @@
+# Exclude the following files and directories
+.git
+node_modules
+vendor
+tmp
+*.log

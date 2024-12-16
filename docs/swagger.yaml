@@ -1,0 +1,537 @@
+definitions:
+  constant.ErrorCode:
+    enum:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    type: integer
+    x-enum-varnames:
+    - ErrCodeInvalidRequest
+    - ErrCodeUnauthorized
+    - ErrCodeForbidden
+    - ErrCodeNotFound
+    - ErrCodeInternalServer
+    - ErrCodeConflict
+    - ErrCodeUpdateTaskStatus
+    - ErrCodeGetTasks
+    - ErrCodeGetTaskSummary
+    - ErrCodeGenerateToken
+    - ErrCodeDuplicateUser
+    - ErrCodeInvalidCredential
+  domain.Role:
+    enum:
+    - employer
+    - employee
+    type: string
+    x-enum-varnames:
+    - RoleEmployer
+    - RoleEmployee
+  domain.Task:
+    properties:
+      assignee_id:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      description:
+        type: string
+      due_date:
+        type: string
+      id:
+        type: string
+      status:
+        $ref: '#/definitions/domain.TaskStatus'
+      title:
+        type: string
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  domain.TaskStatus:
+    enum:
+    - Pending
+    - In Progress
+    - Completed
+    type: string
+    x-enum-varnames:
+    - StatusPending
+    - StatusInProgress
+    - StatusCompleted
+  domain.TaskSummary:
+    properties:
+      completed_tasks:
+        type: integer
+      employee_id:
+        type: string
+      total_tasks:
+        type: integer
+    type: object
+  dto.AssignTaskRequest:
+    properties:
+      assignee_id:
+        type: string
+    type: object
+  dto.BaseResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.CreateTaskRequest:
+    properties:
+      description:
+        example: This is a new task
+        type: string
+      due_date:
+        example: "2024-12-31T23:59:59Z"
+        type: string
+      title:
+        example: New Task
+        type: string
+    type: object
+  dto.CreateUserRequest:
+    properties:
+      password:
+        example: "123456"
+        type: string
+      role:
+        allOf:
+        - $ref: '#/definitions/domain.Role'
+        example: employer
+      username:
+        example: employer1
+        type: string
+    type: object
+  dto.LoginRequest:
+    properties:
+      password:
+        example: "123456"
+        type: string
+      username:
+        example: employer1
+        type: string
+    type: object
+  dto.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+      user:
+        $ref: '#/definitions/dto.User'
+    type: object
+  dto.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  dto.UpdateTaskRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  dto.UpdateTaskStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/domain.TaskStatus'
+    type: object
+  dto.User:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      role:
+        $ref: '#/definitions/domain.Role'
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+  errors.CustomError:
+    properties:
+      code:
+        $ref: '#/definitions/constant.ErrorCode'
+      message:
+        type: string
+    type: object
+  errors.ErrorResponse:
+    properties:
+      code:
+        $ref: '#/definitions/constant.ErrorCode'
+      message:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login a user with username and password
+      parameters:
+      - description: Credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.CustomError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.CustomError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.CustomError'
+      summary: Login a user
+      tags:
+      - auth
+  /auth/refresh-token:
+    post:
+      consumes:
+      - application/json
+      description: Refresh access token using refresh token
+      parameters:
+      - description: Refresh Token
+        in: body
+        name: refresh_token
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.CustomError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.CustomError'
+      summary: Refresh access token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with username and password
+      parameters:
+      - description: User
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.CustomError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.CustomError'
+      summary: Register a new user
+      tags:
+      - auth
+  /tasks:
+    get:
+      description: Get all tasks with optional filtering and sorting
+      parameters:
+      - description: Assignee ID
+        in: query
+        name: assignee
+        type: string
+      - description: Status
+        enum:
+        - '"Pending"'
+        - '"In progress"'
+        - '"Completed"'
+        in: query
+        name: status
+        type: string
+      - description: Sort by field (e.g., created_at, due_date, status)
+        in: query
+        name: sort
+        type: string
+      - description: Sort order (asc or desc)
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Task'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all tasks
+      tags:
+      - tasks
+    post:
+      consumes:
+      - application/json
+      description: Create a new task with the input payload
+      parameters:
+      - description: Task
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new task
+      tags:
+      - tasks
+  /tasks/{taskID}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a task by ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: taskID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a task
+      tags:
+      - tasks
+    put:
+      consumes:
+      - application/json
+      description: Update the details of a specific task
+      parameters:
+      - description: Task ID
+        in: path
+        name: taskID
+        required: true
+        type: string
+      - description: Task
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a task
+      tags:
+      - tasks
+  /tasks/{taskID}/assign:
+    patch:
+      consumes:
+      - application/json
+      description: Assign a task to an employee
+      parameters:
+      - description: Task ID
+        in: path
+        name: taskID
+        required: true
+        type: string
+      - description: Assignee ID
+        in: body
+        name: assigneeID
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AssignTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Assign a task to an employee
+      tags:
+      - tasks
+  /tasks/{taskID}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Update the status of a specific task
+      parameters:
+      - description: Task ID
+        in: path
+        name: taskID
+        required: true
+        type: string
+      - description: Status
+        in: body
+        name: status
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateTaskStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: body
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update task status
+      tags:
+      - tasks
+  /tasks/assignee/{assigneeID}:
+    get:
+      description: Get tasks assigned to a specific user
+      parameters:
+      - description: Assignee ID
+        in: path
+        name: assigneeID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Task'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get tasks by assignee
+      tags:
+      - tasks
+  /tasks/summary:
+    get:
+      description: Get a summary of tasks for each employee
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.TaskSummary'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get task summary
+      tags:
+      - tasks
+securityDefinitions:
+  BearerAuth:
+    description: 'JWT Authorization header using the Bearer scheme. Example: \"Authorization:
+      Bearer {token}\""'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

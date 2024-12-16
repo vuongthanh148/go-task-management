@@ -1,0 +1,67 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.cover
+
+# Output of the go build tool
+*.a
+*.o
+*.e
+
+# Temporary files
+*.tmp
+*.temp
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.bak
+*.backup
+*.orig
+*.rej
+*.log
+
+# Dependency directories
+vendor/
+node_modules/
+
+# Go modules
+go.sum
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Generated documentation
+# docs/
+
+# Database migrations
+# migrations/
+
+# Swagger generated files
+# swagger.yaml
+# swagger.json
+
+# Logs
+*.log
+
+# Environment variables
+# .env
+
+# Docker
+# docker-compose.override.yml
+
+# Debug
+cmd/server/__debug*
+
+golangci-lint

@@ -1,0 +1,42 @@
+linters:
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - gosimple
+    - ineffassign
+    - typecheck
+    - unused
+    - gocyclo
+    - gofmt
+    - goimports
+    - misspell
+    - nakedret
+    - unconvert
+    - gocritic
+    - dupl
+    - goconst
+    - gochecknoinits
+    - unparam
+
+linters-settings:
+  govet: {}
+  gocyclo:
+    min-complexity: 10
+  misspell:
+    locale: US
+
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+  issues-exit-code: 1
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck

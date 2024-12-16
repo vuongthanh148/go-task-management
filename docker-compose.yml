@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_DB: taskdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    depends_on:
+      - db
+    environment:
+      PORT: 8080
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: user
+      POSTGRES_DATABASE: taskdb
+      API_DOCS: true
+    ports:
+      - "8080:8080"
+    command: ["./api"]
+
+volumes:
+  db-data:

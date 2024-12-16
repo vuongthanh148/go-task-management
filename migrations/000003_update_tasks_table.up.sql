@@ -1,0 +1,3 @@
+ALTER TABLE tasks
+ADD COLUMN created_by UUID NOT NULL,
+ADD COLUMN updated_by UUID NOT NULL;
